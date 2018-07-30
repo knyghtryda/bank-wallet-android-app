@@ -1,5 +1,7 @@
 package bitcoin.wallet.core
 
+import bitcoin.wallet.RestoredBlock
+import bitcoin.wallet.log
 import io.reactivex.Observable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -26,6 +28,21 @@ class NetworkManager : INetworkManager {
                 .onErrorReturn {
                     mapOf()
                 }
+    }
+
+    override fun getTransactionBlocks(addresses: List<String>): Observable<List<RestoredBlock>> {
+        addresses.joinToString().log("Yahoo")
+
+        if (addresses.first() == "moyrWfrks5EsHLb2hqUr8nUnC9q9DYXMtK") {
+            val restoredBlock = RestoredBlock().apply {
+                hash = "0000000000000913da941eb0f9133bfd351e01a13d7fac655722e4d325e041b8"
+                height = 1316822
+            }
+
+            return Observable.just(listOf(restoredBlock))
+        }
+
+        return Observable.just(listOf())
     }
 }
 

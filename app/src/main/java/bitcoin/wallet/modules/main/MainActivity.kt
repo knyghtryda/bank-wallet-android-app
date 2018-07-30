@@ -77,7 +77,9 @@ class MainActivity : AppCompatActivity() {
         })
 
         try {
-            BlockchainManager.startServices()
+            Factory.preferencesManager.savedWords?.let {
+                BlockchainManager.startServices(it)
+            }
         } catch (exception: UserNotAuthenticatedException) {
             EncryptionManager.showAuthenticationScreen(this, LauncherActivity.AUTHENTICATE_TO_REDIRECT)
         } catch (exception: KeyPermanentlyInvalidatedException) {
