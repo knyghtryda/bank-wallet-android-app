@@ -1,5 +1,6 @@
 package bitcoin.wallet.core
 
+import bitcoin.wallet.RestoredBlock
 import bitcoin.wallet.entities.Balance
 import bitcoin.wallet.entities.BlockchainInfo
 import bitcoin.wallet.entities.ExchangeRate
@@ -47,6 +48,7 @@ interface IDatabaseManager {
 interface INetworkManager {
     fun getJwtToken(identity: String, pubKeys: Map<Int, String>): Observable<String>
     fun getExchangeRates(): Observable<Map<String, Double>>
+    fun getTransactionBlocks(addresses: List<String>): Observable<List<RestoredBlock>>
 }
 
 interface IEncryptionManager {
