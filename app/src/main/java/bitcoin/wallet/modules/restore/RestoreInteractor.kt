@@ -11,7 +11,7 @@ class RestoreInteractor(private val mnemonic: IMnemonic, private val blockchainM
     override fun restore(words: List<String>) {
         if (mnemonic.validateWords(words)) {
             try {
-                blockchainManager.initNewWallet(words)
+                blockchainManager.restoreWalletAsync(words)
                 delegate?.didRestore()
             } catch (e: UserNotAuthenticatedException) {
                 delegate?.didFailToRestore(e)

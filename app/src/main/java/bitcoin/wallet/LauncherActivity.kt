@@ -7,6 +7,7 @@ import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.UserNotAuthenticatedException
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import bitcoin.wallet.blockchain.BlockchainManager
 import bitcoin.wallet.core.managers.Factory
 import bitcoin.wallet.core.security.EncryptionManager
 import bitcoin.wallet.modules.guest.GuestModule
@@ -31,6 +32,7 @@ class LauncherActivity : AppCompatActivity() {
             EncryptionManager.showNoDeviceLockWarning(this)
             return
         } else if (Factory.preferencesManager.savedWords != null) {
+            BlockchainManager.startServices()
             MainModule.start(this)
         } else {
             GuestModule.start(this)

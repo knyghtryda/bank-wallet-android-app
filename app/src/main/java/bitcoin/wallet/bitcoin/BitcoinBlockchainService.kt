@@ -1,10 +1,13 @@
 package bitcoin.wallet.bitcoin
 
+import bitcoin.wallet.bitcoin.restore.*
 import bitcoin.wallet.blockchain.BlockchainStorage
 import bitcoin.wallet.blockchain.IBlockchainService
+import bitcoin.wallet.core.managers.Factory
 import bitcoin.wallet.entities.Balance
 import bitcoin.wallet.entities.TransactionRecord
 import bitcoin.wallet.log
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import org.bitcoinj.core.listeners.DownloadProgressTracker
 import java.util.concurrent.ConcurrentHashMap
@@ -24,18 +27,49 @@ object BitcoinBlockchainService : IBlockchainService {
     fun init(bitcoinJWrapper: BitcoinJWrapper, storage: BlockchainStorage) {
         this.storage = storage
         this.bitcoinJWrapper = bitcoinJWrapper
-    }
-
-    fun initNewWallet() {
-        updateBalance(0)
-        updateBlockHeight(0)
-    }
-
-    fun start(words: List<String>) {
         updateTransactionsSubject.sample(2, TimeUnit.SECONDS).subscribe {
             dequeueTransactionUpdate()
         }
+    }
 
+    fun initNewWallet(words: List<String>) {
+        updateBalance(0)
+        updateBlockHeight(0)
+        start(words)
+
+    }
+
+    fun restoreWalletAsync(words: List<String>) {
+        updateBalance(0)
+        updateBlockHeight(0)
+
+        val wallet = bitcoinJWrapper.getWallet(words)
+
+        val restoredBlocksProvider = RestoredBlocksProvider(Factory.networkManager, BitcoinAddressProvider())
+        val filteredBlocksProvider = FilteredBlocksProvider()
+        val walletRestorer = WalletRestorer()
+
+        TransactionsRestorer(restoredBlocksProvider, filteredBlocksProvider, walletRestorer)
+                .restore(wallet)
+                .subscribeOn(Schedulers.io())
+                .doOnSubscribe {
+                    storage.updateBlockchainSyncing(BTC, true)
+                }
+                .doFinally {
+                    storage.updateBlockchainSyncing(BTC, false)
+                }
+                .subscribe {
+                    updateBalance(wallet.balance.value)
+                    updateBlockHeight(wallet.lastBlockSeenHeight.toLong())
+
+                    wallet.getTransactions(true).forEach {
+                        enqueueTransactionUpdate(bitcoinJWrapper.newTransactionRecord(wallet, it))
+                    }
+                    start(words)
+                }
+    }
+
+    fun start(words: List<String>) {
         bitcoinJWrapper.prepareEnvForWallet(words, object : BitcoinChangeListener {
             override fun onBalanceChange(value: Long) {
                 updateBalance(value)

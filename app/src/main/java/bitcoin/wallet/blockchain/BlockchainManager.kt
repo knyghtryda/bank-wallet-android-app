@@ -28,7 +28,13 @@ object BlockchainManager {
     @Throws(UserNotAuthenticatedException::class)
     fun initNewWallet(words: List<String>) {
         localStorage.saveWords(words)
-        BitcoinBlockchainService.initNewWallet()
+        BitcoinBlockchainService.initNewWallet(words)
+    }
+
+    @Throws(UserNotAuthenticatedException::class)
+    fun restoreWalletAsync(words: List<String>) {
+        localStorage.saveWords(words)
+        BitcoinBlockchainService.restoreWalletAsync(words)
     }
 
     @Throws(NotEnoughFundsException::class, InvalidAddress::class)

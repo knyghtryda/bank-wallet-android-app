@@ -1,8 +1,8 @@
 package bitcoin.wallet.bitcoin.restore
 
 import bitcoin.wallet.RestoredBlock
-import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import io.reactivex.Completable
 import io.reactivex.Observable
 import org.bitcoinj.core.FilteredBlock
 import org.bitcoinj.wallet.Wallet
@@ -27,10 +27,11 @@ class TransactionsRestorerTest {
 
         whenever(restoredBlocksProvider.getBlocksForRestore(wallet)).thenReturn(Observable.just(restoredBlocks))
         whenever(filteredBlocksProvider.getFilteredBlocks(wallet, restoredBlocks)).thenReturn(Observable.just(filteredBlocksWithHeights))
+        whenever(walletRestorer.restoreTransactionsToWallet(wallet, filteredBlocksWithHeights)).thenReturn(Completable.complete())
 
         restorer.restore(wallet)
-
-        verify(walletRestorer).restoreTransactionsToWallet(wallet, filteredBlocksWithHeights)
+                .test()
+                .assertComplete()
     }
 
 }

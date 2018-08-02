@@ -11,7 +11,12 @@ import java.util.*
 
 class FilteredBlocksProvider {
 
+    private lateinit var peerGroup: PeerGroup
+
     fun getFilteredBlocks(wallet: Wallet, restoredBlocks: List<RestoredBlock>): Observable<Map<Int, FilteredBlock>> {
+        if (restoredBlocks.isEmpty()) {
+            return Observable.just(mapOf())
+        }
 
         return Observable.create<Map<Int, FilteredBlock>> { emitter ->
 
@@ -27,6 +32,9 @@ class FilteredBlocksProvider {
                         if (result.size == restoredBlocks.size) {
                             emitter.onNext(result)
                             emitter.onComplete()
+
+                            peerGroup.removeWallet(wallet)
+                            peerGroup.stopAsync()
                         }
                     }
 
@@ -35,18 +43,17 @@ class FilteredBlocksProvider {
 
             }
 
-            val peerGroup = PeerGroup(wallet.params, blockChain)
+            peerGroup = PeerGroup(wallet.params, blockChain)
 
             peerGroup.addWallet(wallet)
             peerGroup.addPeerDiscovery(DnsDiscovery(wallet.params))
             peerGroup.fastCatchupTimeSecs = Date().time / 1000
             peerGroup.maxConnections = 4
 
-            var xxx = false
+            var getBlocksMessageSent = false
 
             peerGroup.addConnectedEventListener { peer, peerCount ->
-
-                if (!xxx) {
+                if (!getBlocksMessageSent) {
                     val getDataMessage = GetDataMessage(wallet.params)
                     restoredBlocks.forEach {
                         getDataMessage.addFilteredBlock(Sha256Hash.wrap(it.hash))
@@ -54,13 +61,11 @@ class FilteredBlocksProvider {
 
                     peer.sendMessage(getDataMessage)
 
-                    xxx = true
+                    getBlocksMessageSent = true
                 }
-
             }
 
             peerGroup.startAsync()
-
         }
     }
 

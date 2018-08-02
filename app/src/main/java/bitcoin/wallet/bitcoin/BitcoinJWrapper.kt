@@ -46,18 +46,7 @@ class BitcoinJWrapper(private val filesDir: File, assetManager: AssetManager, te
     }
 
     fun prepareEnvForWallet(words: List<String>, listener: BitcoinChangeListener) {
-        val seedCode = words.joinToString(" ")
-        val walletFilename = "${params.paymentProtocolId}-${Integer.toHexString(seedCode.hashCode())}.dat"
-        val walletFile = File(filesDir, walletFilename)
-        try {
-            "Read wallet from file: ${walletFile.absolutePath}".log()
-            wallet = WalletBip44.loadFromFile(walletFile, params)
-        } catch (e: UnreadableWalletException) {
-            "Could not read wallet from file: \"${e.message}\". New wallet will be created".log()
-            wallet = WalletBip44.newFromSeedCode(params, seedCode)
-            wallet.saveToFile(walletFile)
-        }
-        wallet.autosaveToFile(walletFile, 0, TimeUnit.SECONDS, null)
+        wallet = getWallet(words)
 
         val spvBlockStore = SPVBlockStore(params, File(filesDir, "${params.paymentProtocolId}.spvchain"))
         if (wallet.lastBlockSeenHeight <= 0) {
@@ -95,9 +84,9 @@ class BitcoinJWrapper(private val filesDir: File, assetManager: AssetManager, te
                     }
 
                     if (prevConfidenceType == null) {
-                        listener.onNewTransaction(newTransactionRecord(txNewState))
+                        listener.onNewTransaction(newTransactionRecord(changedWallet, txNewState))
                     } else {
-                        listener.onTransactionConfidenceChange(newTransactionRecord(txNewState))
+                        listener.onTransactionConfidenceChange(newTransactionRecord(changedWallet, txNewState))
                     }
 
                     transactionConfidenceTypes[txNewState.hashAsString] = newConfidenceType
@@ -120,6 +109,26 @@ class BitcoinJWrapper(private val filesDir: File, assetManager: AssetManager, te
         }
     }
 
+    fun getWallet(words: List<String>): Wallet {
+        val seedCode = words.joinToString(" ")
+        val walletFilename = "${params.paymentProtocolId}-${Integer.toHexString(seedCode.hashCode())}.dat"
+        val walletFile = File(filesDir, walletFilename)
+
+        var wallet: Wallet
+        try {
+            "Read wallet from file: ${walletFile.absolutePath}".log()
+            wallet = WalletBip44.loadFromFile(walletFile, params)
+        } catch (e: UnreadableWalletException) {
+            "Could not read wallet from file: \"${e.message}\". New wallet will be created".log()
+            wallet = WalletBip44.newFromSeedCode(params, seedCode)
+            wallet.saveToFile(walletFile)
+        }
+
+        wallet.autosaveToFile(walletFile, 0, TimeUnit.SECONDS, null)
+
+        return wallet
+    }
+
     fun startAsync(tracker: DownloadProgressTracker) {
         peerGroup.startAsync().addListener(Runnable {
             peerGroup.startBlockChainDownload(tracker)
@@ -140,7 +149,7 @@ class BitcoinJWrapper(private val filesDir: File, assetManager: AssetManager, te
 
     fun getReceiveAddress(): String = wallet.currentReceiveAddress().toBase58()
 
-    private fun newTransactionRecord(tx: Transaction): TransactionRecord {
+    fun newTransactionRecord(wallet: Wallet, tx: Transaction): TransactionRecord {
         return TransactionRecord().apply {
             transactionHash = tx.hashAsString
             coinCode = "BTC"
