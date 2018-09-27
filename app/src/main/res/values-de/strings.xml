@@ -13,7 +13,7 @@
   <string name="welcome_description">Dezentralisierte App</string>
   <string name="welcome_btn_create_wallet">Wallet Erstellen</string>
   <string name="welcome_btn_import_wallet">Wallet Importieren</string>
-  <string name="restore_title">Papier-Schlüssel eingeben</string>
+  <string name="restore_title">Schlüssel eingeben</string>
   <string name="restore_validation_failed">Der eingegebene Wörter ist ungültig</string>
   <string name="backup_words_title">Sicherung</string>
   <string name="backup_words_description">
