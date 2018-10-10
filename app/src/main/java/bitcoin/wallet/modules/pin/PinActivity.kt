@@ -16,6 +16,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import bitcoin.wallet.BaseActivity
 import bitcoin.wallet.R
 import bitcoin.wallet.core.App
@@ -123,6 +124,14 @@ class PinActivity : BaseActivity(), NumPadItemsAdapter.Listener, FingerprintAuth
             finish()
         })
 
+        viewModel.keyStoreSafeExecute.observe(this, Observer { triple ->
+            triple?.let {
+                val (action, onSuccess, onFailure) = it
+                safeExecuteWithKeystore(action, onSuccess, onFailure)
+            }
+        })
+
+
         imgPinMask1 = findViewById(R.id.imgPinMaskOne)
         imgPinMask2 = findViewById(R.id.imgPinMaskTwo)
         imgPinMask3 = findViewById(R.id.imgPinMaskThree)
@@ -176,13 +185,13 @@ class PinActivity : BaseActivity(), NumPadItemsAdapter.Listener, FingerprintAuth
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == AUTHENTICATE_TO_FINGERPRINT) {
                 showFingerprintDialog()
+                return
             }
         }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun unlockWallet() {
