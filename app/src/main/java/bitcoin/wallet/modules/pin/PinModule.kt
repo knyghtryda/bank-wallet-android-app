@@ -1,6 +1,7 @@
 package bitcoin.wallet.modules.pin
 
 import android.content.Context
+import bitcoin.wallet.core.IKeyStoreSafeExecute
 import bitcoin.wallet.core.ILocalStorage
 import bitcoin.wallet.core.ISettingsManager
 import bitcoin.wallet.core.managers.Factory
@@ -33,10 +34,6 @@ object PinModule {
         fun navigateToPrevPage()
         fun setTitleForEditPin()
         fun setDescriptionForEditPin()
-    }
-
-    interface IKeyStoreSafeExecute {
-        fun safeExecute(action: Runnable, onSuccess: Runnable? = null, onFailure: Runnable? = null)
     }
 
     interface IViewDelegate {
